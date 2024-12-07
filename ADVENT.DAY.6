@@ -1,0 +1,149 @@
+      * Advent of code 2024 day 6 puzzle
+      * Joe Goldthwaite 2024-12-06
+
+
+      * Get test data
+      OPENPATH 'xxxxxxx' TO FILE ELSE STOP 201,'xxx'
+      DIM ROWS(500)
+      MATREAD ROWS FROM FILE, 'AOC_DAY6_1_2024.txt' ELSE STOP 202, 'AOC_DAY6_1_2024.txt'
+      MAX.ROW = INMAT() ;* This gets the number of elements loaded by MATREAD
+
+      * The display is easier for me to watch if the unused positions are spaces instead of periods
+      * so this converts them all
+      FOR ROW = 1 TO MAX.ROW
+         ROWS(ROW) = CHANGE(ROWS(ROW), '.', ' ')
+      NEXT ROW
+
+      * Turn off the prompt character and the echo so characters don't mess up the diplay
+      PROMPT ''
+      ECHO OFF
+
+      STEP.MODE = 1 ;* If set to one you have to enter a key between each step.
+      REPEAT.MOVES = 0 ;* count of positions that were already accessed
+      UNIQUE.MOVES = 1 ;* count of positions that were virginal
+
+
+      DIRECTION = '^' ;* starting direction UP=^, Down=V, Left=<, Right=>
+
+      * Find the guard starting position by scanning for the '^'
+      FOR GUARD.ROW = 1 TO MAX.ROW
+         GUARD.COL = INDEX(ROWS(GUARD.ROW),'^',1)
+         IF GUARD.COL NE 0 THEN EXIT
+      NEXT
+
+
+      * Display the map on the screen
+      PRINT @(-1):
+      FOR ROW = 1 TO MAX.ROW
+         PRINT ROWS(ROW)
+      NEXT
+
+      * Position the cursor at the guard spot and wait for the user to hit a key
+      * before starting.
+      PRINT @(GUARD.COL-1, GUARD.ROW-1):
+      INPUT Q,1:
+
+      IF UPCASE(Q) = 'Q' THEN DONE = 1
+      IF UPCASE(Q) = 'C' THEN STEP.MODE = 0
+
+      * Main loop
+      DONE = 0
+      LOOP UNTIL DONE = 1
+         GOSUB MOVE
+      REPEAT
+
+      PROMPT = '>'
+      ECHO ON
+
+      PRINT @(0, 132):
+      STOP
+
+MOVE:
+
+      * Figure out where we are trying to move to based on our direction
+
+      TO.COL = GUARD.COL
+      TO.ROW = GUARD.ROW
+
+      BEGIN CASE
+         CASE DIRECTION = '^'
+            TO.ROW -= 1
+         CASE DIRECTION = '>'
+            TO.COL += 1
+         CASE DIRECTION = 'V'
+            TO.ROW += 1
+         CASE 1
+            TO.COL -= 1
+      END CASE
+
+      * If we're out of our bounds then we're done and can return
+      IF TO.ROW < 1 OR TO.ROW > 130 OR TO.COL < 1 OR TO.COL > 130 THEN
+         DONE = 1
+         RETURN
+      END
+
+
+      * Get the character at the position we want to move to
+      CHAR.AT.POS = ROWS(TO.ROW)[TO.COL,1]
+
+
+      IF CHAR.AT.POS = '#' THEN
+         * The pound sign means this is a barrier so we need to change direction.
+         BEGIN CASE
+            CASE DIRECTION = '^'
+               DIRECTION = '>'
+            CASE DIRECTION = '>'
+               DIRECTION = 'V'
+            CASE DIRECTION = 'V'
+               DIRECTION = '<'
+            CASE 1
+               DIRECTION = '^'
+         END CASE
+      END ELSE
+
+         * If we don't have a pound sign then we can move to this position.
+         * If the character here is a space then we've never been to this position so
+         * it's a unique move. If it's anything else then we have been here
+         * and it's a repeat move.
+         IF CHAR.AT.POS = ' ' THEN
+            UNIQUE.MOVES += 1
+         END ELSE
+            REPEAT.MOVES += 1
+         END
+
+         GUARD.COL = TO.COL
+         GUARD.ROW = TO.ROW
+
+         * This replaces the character at the new position with a direction indicator
+         * to show that we've moved to this position and to show the direction we were
+         * moving.
+         ROWS(GUARD.ROW)[GUARD.COL,1] = DIRECTION
+
+         GOSUB DISPLAY.STATUS
+
+      END
+      RETURN
+
+DISPLAY.STATUS:
+
+      * Display the direction and move count
+      PRINT @(0,131):@(-3):'Direction=':DIRECTION:' Guard at ':GUARD.COL:'x':GUARD.ROW:
+      PRINT @(0,132):'Unique Moves=':UNIQUE.MOVES:', Repeat Moves=':REPEAT.MOVES:', Total=':UNIQUE.MOVES + REPEAT.MOVES
+
+      * Print the direction character at the guard position so we can see where we are
+      CURSOR.POS = @(GUARD.COL-1, GUARD.ROW-1)
+      PRINT CURSOR.POS:DIRECTION:CURSOR.POS:
+
+      * To start out, we're in step mode and have to hit a kee at each step.
+      * If a "C" is entered then the program will run till it's finished.
+      IF STEP.MODE THEN
+         INPUT Q,1:
+         IF UPCASE(Q) = 'Q' THEN DONE = 1
+         IF UPCASE(Q) = 'C' THEN STEP.MODE = 0
+      END ELSE
+         * This loop adds a 2 millisecond delay beween steps
+         T = NOW() + 2
+         LOOP WHILE NOW() < T
+         REPEAT
+      END
+      RETURN

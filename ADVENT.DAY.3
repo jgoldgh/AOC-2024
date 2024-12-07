@@ -1,0 +1,141 @@
+      OPEN 'BP.JG' TO F.BP.JG ELSE STOP 201,'BP.JG'
+
+      READ LINES FROM F.BP.JG, 'ADVENT.DAY3.INPUT' ELSE STOP 202,'ADVENT.DAY3.INPUT'
+
+      START = NOW()
+      DO.MUL = 1
+      CHR = ''
+      
+      GOSUB RESET.STATE
+      DO.MUL.ANSWER = 0
+      ANSWER = 0
+      
+      LOOP
+         REMOVE LINE FROM LINES SETTING DELIM
+         IF LINE NE '' THEN
+            LN = LEN(LINE)
+            FOR X = 1 TO LN
+               CHR = LINE[X,1]
+               BEGIN CASE
+                  CASE STATE = ''
+                     IF CHR = 'm' THEN
+                        STATE = CHR
+                     END ELSE
+                        IF CHR = 'd' THEN
+                           STATE = CHR
+                        END ELSE
+                           GOSUB RESET.STATE
+                        END
+                     END
+                  CASE STATE = 'm'
+                     IF CHR = 'u'THEN
+                        STATE = CHR
+                     END ELSE
+                        GOSUB RESET.STATE
+                     END
+                  CASE STATE = 'u'
+                     IF CHR = 'l' THEN
+                        STATE = 'l'
+                     END ELSE
+                        GOSUB RESET.STATE
+                     END
+                  CASE STATE = 'l'
+                     IF CHR = '(' THEN
+                        STATE = CHR
+                     END ELSE
+                        GOSUB RESET.STATE
+                     END
+                  CASE STATE = '('
+                     IF CHR >= '0' AND CHR <= '9' THEN
+                        MUL1 := CHR
+                     END ELSE
+                        IF CHR = ',' THEN
+                           STATE = CHR
+                        END ELSE
+                           GOSUB RESET.STATE
+                        END
+                     END
+                  CASE STATE = ','
+                     IF CHR >= 0 AND CHR <= '9' THEN
+                        MUL2 := CHR
+                     END ELSE
+                        IF CHR = ')' THEN
+                           *PRINT EXPRESSION
+                           PRODUCT = MUL1*MUL2
+                           *PRINT MUL1:'*':MUL2:'=':PRODUCT
+                           ANSWER += PRODUCT
+                           IF DO.MUL THEN
+                              DO.MUL.ANSWER += PRODUCT
+                           END
+                        END
+                        GOSUB RESET.STATE
+                     END
+                  CASE STATE = 'd'
+                     IF CHR = 'o' THEN
+                        STATE = CHR
+                     END ELSE
+                        GOSUB RESET.STATE
+                     END
+                  CASE STATE = 'o'
+                     IF CHR = '(' THEN
+                        STATE = 'o('
+                     END ELSE
+                        IF CHR = 'n' THEN
+                           STATE = CHR
+                        END ELSE
+                           GOSUB RESET.STATE
+                        END
+                     END
+                  CASE STATE = 'o('
+                     IF CHR = ')' THEN
+                        DO.MUL = 1
+                     END
+                     GOSUB RESET.STATE
+                  CASE STATE = 'n'
+                     IF CHR = "'" THEN
+                        STATE = CHR
+                     END ELSE
+                        GOSUB RESET.STATE
+                     END
+                  CASE STATE = "'"
+                     IF CHR = 't' THEN
+                        STATE = CHR
+                     END ELSE
+                        GOSUB RESET.STATE
+                     END
+                  CASE STATE = 't'
+                     IF CHR = '(' THEN
+                        STATE = 't('
+                     END ELSE
+                        GOSUB RESET.STATE
+                     END
+                  CASE STATE = 't('
+                     IF CHR = ')' THEN
+                        DO.MUL = 0
+                     END
+                     GOSUB RESET.STATE
+                  CASE 1
+                     GOSUB RESET.STATE
+               END CASE
+            NEXT
+         END
+      UNTIL DELIM = 0 DO
+      REPEAT
+
+      MILLISECONDS = NOW() - START
+      PRINT 'All Answer = ':ANSWER
+      PRINT 'DO.MUL = ':DO.MUL.ANSWER
+      PRINT
+      PRINT 'It took ':MILLISECONDS:' ms'
+
+      STOP
+
+RESET.STATE:
+      IF CHR = 'm' OR CHR = 'd' THEN
+         STATE = CHR
+      END ELSE
+         STATE = ''
+      END
+      MUL1 = ''
+      MUL2 = ''
+      RETURN
